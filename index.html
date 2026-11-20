@@ -110,7 +110,7 @@
                     Dashboard <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-600">Keuangan</span>
                 </h1>
                 <p class="text-sm sm:text-base text-slate-600 mt-2 font-medium flex items-center gap-2">
-                    <span>Rasio Konversi Pakan & Operasional Ternak</span>
+                    <span>Saldo, Rasio Konversi Pakan &amp; Operasional Ternak</span>
                 </p>
             </div>
             
@@ -122,36 +122,58 @@
                 </span>
                 <div class="flex flex-col">
                     <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Status Node</span>
-                    <span class="text-xs font-bold text-emerald-800">Realtime Bot Active</span>
+                    <span id="syncStatus" class="text-xs font-bold text-emerald-800">Realtime Bot Active</span>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- METRICS CARDS SECTION -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
         
-        <!-- Total Pengeluaran Card -->
+        <!-- Sisa Saldo Card -->
         <div class="card-farm p-7 bg-gradient-to-br from-emerald-700 via-teal-700 to-emerald-900 text-white border-emerald-600/30 shadow-xl shadow-emerald-900/10 relative overflow-hidden">
             <div class="absolute -right-8 -bottom-8 w-36 h-36 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
             
             <div class="flex items-center justify-between">
                 <p class="text-xs font-extrabold uppercase tracking-widest text-emerald-200">
-                    Total Pengeluaran
+                    Sisa Saldo
                 </p>
                 <div class="p-2 bg-white/10 rounded-xl backdrop-blur-md">
                     <svg class="w-5 h-5 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <h2 id="sisaSaldo" class="text-2xl sm:text-3xl md:text-4xl font-black mt-4 text-white tracking-tight">
+                Rp 0
+            </h2>
+            <div id="infoSaldoMasuk" class="mt-3 flex items-center gap-2 text-xs text-emerald-100/80">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-300"></span>
+                <span>Total saldo masuk: Rp 0</span>
+            </div>
+        </div>
+
+        <!-- Total Pengeluaran Card -->
+        <div class="card-farm p-7 relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-extrabold uppercase tracking-widest text-slate-400">
+                    Total Pengeluaran
+                </p>
+                <div class="p-2 bg-rose-50 rounded-xl">
+                    <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
                 </div>
             </div>
 
-            <h2 id="totalPengeluaran" class="text-3xl sm:text-4xl md:text-5xl font-black mt-4 text-white tracking-tight">
+            <h2 id="totalPengeluaran" class="text-2xl sm:text-3xl md:text-4xl font-black mt-4 text-slate-900 tracking-tight">
                 Rp 0
             </h2>
-            <div class="mt-3 flex items-center gap-2 text-xs text-emerald-100/80">
+            <div class="mt-3 flex items-center gap-2 text-xs text-slate-500">
                 <span class="inline-block w-2 h-2 rounded-full bg-amber-400"></span>
-                <span>Akumulasi biaya operasional & pakan</span>
+                <span>Akumulasi biaya operasional &amp; pakan</span>
             </div>
         </div>
 
@@ -168,7 +190,7 @@
                 </div>
             </div>
 
-            <h2 id="jumlahTransaksi" class="text-3xl sm:text-4xl md:text-5xl font-black mt-4 text-slate-900 tracking-tight">
+            <h2 id="jumlahTransaksi" class="text-2xl sm:text-3xl md:text-4xl font-black mt-4 text-slate-900 tracking-tight">
                 0
             </h2>
             <div class="mt-3 flex items-center gap-2 text-xs text-slate-500">
@@ -217,24 +239,29 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwAmvTax0kl7NIJ6o2vGG-z8X6NLF5Frgdau0ems6aFdMYU_DPpy4zQgmfrXK_joW83/exec";
     const CACHE_KEY = "finance_dashboard_cache_data";
 
+    const sisaSaldoEl = document.getElementById('sisaSaldo');
+    const infoSaldoMasukEl = document.getElementById('infoSaldoMasuk');
     const totalEl = document.getElementById('totalPengeluaran');
     const jumlahEl = document.getElementById('jumlahTransaksi');
     const timelineEl = document.getElementById('timeline');
     const refreshBtn = document.getElementById('refreshBtn');
+    const syncStatusEl = document.getElementById('syncStatus');
 
     function formatRupiah(num) {
-        return new Intl.NumberFormat('id-ID', {
+        const nilai = Number(num) || 0;
+        const tanda = nilai < 0 ? '-' : '';
+        const formatted = new Intl.NumberFormat('id-ID', {
             style: 'currency',
             currency: 'IDR',
             minimumFractionDigits: 0
-        }).format(num || 0);
+        }).format(Math.abs(nilai));
+        return tanda + formatted;
     }
 
-    // Mengubah tanggal database menjadi teks lokal Indonesia
     function formatTanggal(dateString) {
         if (!dateString) return '-';
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) return dateString; 
+        if (isNaN(date.getTime())) return dateString;
         
         return new Intl.DateTimeFormat('id-ID', {
             day: 'numeric',
@@ -243,9 +270,16 @@
         }).format(date);
     }
 
-    // Pewarnaan otomatis badge transaksi berbasis nuansa peternakan & operasional
-    function getBadgeStyle(deskripsi) {
-        const teks = (deskripsi || '').toLowerCase();
+    function isTransaksiMasuk(item) {
+        return item.tipe === 'masuk' || String(item.deskripsi || '').startsWith('[SALDO]');
+    }
+
+    function getBadgeStyle(item) {
+        if (isTransaksiMasuk(item)) {
+            return { bg: 'bg-teal-500/10 text-teal-800 border-teal-300/50', label: 'Saldo Masuk' };
+        }
+
+        const teks = (item.deskripsi || '').toLowerCase();
         if (teks.includes('makan') || teks.includes('minum') || teks.includes('kopi') || teks.includes('kuliner')) {
             return { bg: 'bg-amber-500/10 text-amber-800 border-amber-300/50', label: 'Kuliner' };
         }
@@ -255,49 +289,65 @@
         if (teks.includes('listrik') || teks.includes('air') || teks.includes('wifi') || teks.includes('kos') || teks.includes('pulsa')) {
             return { bg: 'bg-indigo-500/10 text-indigo-800 border-indigo-300/50', label: 'Tagihan' };
         }
-        // Default kategori pakan / operasional ternak
         return { bg: 'bg-emerald-500/10 text-emerald-800 border-emerald-300/50', label: 'Pakan & Ternak' };
     }
 
-    // Pengaman string agar deskripsi super panjang tidak merusak tata letak kartu
     function batasiTeks(teks, batas = 65) {
         if (!teks) return 'Transaksi';
         return teks.length > batas ? teks.substring(0, batas) + '...' : teks;
     }
 
-    // Fungsi pemroses kalkulasi angka & trigger rendering ke HTML
     function prosesDanTampilkanData(data) {
         if (!Array.isArray(data)) return;
 
-        const total = data.reduce((acc, item) => {
-            const nilai = parseFloat(item.jumlah) || 0;
-            return acc + Math.round(nilai * 100);
-        }, 0) / 100;
+        let totalMasukSen = 0;
+        let totalKeluarSen = 0;
 
-        totalEl.textContent = formatRupiah(total);
+        data.forEach(item => {
+            const nilaiAbs = Math.abs(parseFloat(item.jumlah) || 0);
+            const sen = Math.round(nilaiAbs * 100);
+            if (isTransaksiMasuk(item)) {
+                totalMasukSen += sen;
+            } else {
+                totalKeluarSen += sen;
+            }
+        });
+
+        const totalMasuk = totalMasukSen / 100;
+        const totalKeluar = totalKeluarSen / 100;
+        const sisaSaldo = (totalMasukSen - totalKeluarSen) / 100;
+
+        sisaSaldoEl.textContent = formatRupiah(sisaSaldo);
+        infoSaldoMasukEl.innerHTML = `
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-300"></span>
+            <span>Total saldo masuk: ${formatRupiah(totalMasuk)}</span>
+        `;
+        totalEl.textContent = formatRupiah(totalKeluar);
         jumlahEl.textContent = data.length;
 
         render([...data].reverse());
     }
 
     async function muatData() {
-        if (refreshBtn.disabled) return; 
+        if (refreshBtn.disabled) return;
 
         try {
-            // Aktifkan efek loading pada tombol
             refreshBtn.disabled = true;
             refreshBtn.textContent = "Memuat...";
+            if (syncStatusEl) syncStatusEl.textContent = "Syncing...";
 
-            const response = await fetch(`${WEB_APP_URL}?action=read`);
+            const response = await fetch(`${WEB_APP_URL}?action=read`, { cache: "no-store" });
             const data = await response.json();
 
             if (data.error) throw new Error(data.error);
 
             localStorage.setItem(CACHE_KEY, JSON.stringify(data));
             prosesDanTampilkanData(data);
+            if (syncStatusEl) syncStatusEl.textContent = "Realtime Bot Active";
 
         } catch (err) {
             console.error(err);
+            if (syncStatusEl) syncStatusEl.textContent = "Offline Cache";
 
             const dataLokal = localStorage.getItem(CACHE_KEY);
             if (dataLokal) {
@@ -314,7 +364,6 @@
                 </div>
             `;
         } finally {
-            // Kembalikan tombol ke kondisi normal setelah selesai data masuk
             refreshBtn.disabled = false;
             refreshBtn.textContent = "Refresh";
         }
@@ -329,16 +378,19 @@
         }
 
         timelineEl.innerHTML = data.map(item => {
-            const jumlah = parseFloat(item.jumlah) || 0;
-            const badge = getBadgeStyle(item.deskripsi);
+            const jumlahAbs = Math.abs(parseFloat(item.jumlah) || 0);
+            const masuk = isTransaksiMasuk(item);
+            const badge = getBadgeStyle(item);
             const tanggalDiformat = formatTanggal(item.tanggal);
             const deskripsiAman = batasiTeks(item.deskripsi);
+            const tanda = masuk ? '+' : '-';
+            const warnaNominal = masuk ? 'text-teal-700' : 'text-rose-700';
 
             return `
                 <div class="card-farm card-farm-hover p-5 fade-in">
                     <div class="flex justify-between items-start gap-4">
                         <div class="min-w-0">
-                            <div class="flex items-center gap-2 mb-2">
+                            <div class="flex items-center gap-2 mb-2 flex-wrap">
                                 <span class="text-[10px] px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-bold border border-slate-200">
                                     #${item.id || '0'}
                                 </span>
@@ -354,8 +406,8 @@
                             </p>
                         </div>
                         <div class="shrink-0 text-right">
-                            <p class="text-emerald-700 font-extrabold text-base md:text-xl tracking-tight">
-                                ${formatRupiah(jumlah)}
+                            <p class="${warnaNominal} font-extrabold text-base md:text-xl tracking-tight">
+                                ${tanda}${formatRupiah(jumlahAbs)}
                             </p>
                         </div>
                     </div>
