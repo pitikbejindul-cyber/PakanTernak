@@ -1,2 +1,0 @@
-# PakanTernak
-Pakan Ternak 
